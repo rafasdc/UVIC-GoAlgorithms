@@ -1,3 +1,10 @@
+/** 
+ * This file contains functions for validatiing a move, calculating scores
+ * of the game KO. Specifically, it allows for checking KO, Suicide, kileld armies,
+ * area scoring calculation and stone scoring calculation. 
+ * 
+ */ 
+
 
 /**
  *The object used as a board which is contained in a 2D array of Board objects
@@ -209,7 +216,7 @@ function FloodFillBFSForDeath(Board,positions){
 	
 
 /**
- * Flood fill the whole board to calculate Areas controlled
+ * Flood fill with an extra token checker to add score if area is undisputed
  *
  * @param Board {Board object} The Board to add neighbour 
  * @param neighbour {Board object} The neighbour to add to the board
@@ -239,6 +246,7 @@ function FloodFillBFSForDeath(Board,positions){
 	                visits++;
 	                position.row = r.neighbour[i].x;
 	                position.column = r.neighbour[i].y;
+	                //Call helper functions to check which tokens are adjacent in order to determine dispute between areas
 	                checkAdjacentTokens(A,tokens,position);
 	                queue.push(r.neighbour[i]);
 	            }
@@ -357,7 +365,7 @@ function checkDeath(position, board){
 	var positions = [];
 	//console.log("checking if token " + board[position.row][position.column].token + " placed at row: " + position.row + " column: " + position.column + " killed something in board"); //debugging purposes
 	
-	//Will do a Flood fill on every adjacent token to check if it exhausted all of its liberties, if it did the positions of dead are added to the array
+	//The following if statements will do a Flood fill on every adjacent token to check if it exhausted all of its liberties, if it did the positions of dead are added to the array
     if (position.column+1 < board.length){
     	var A = getNeighbours(board);
 	    if (A[position.row][position.column].token != A[position.row][position.column+1].token && A[position.row][position.column+1].token != 0){
@@ -426,17 +434,18 @@ function checkDeath(position, board){
 	}
 	
 /**
- * Gets the result of a board, based on stone scoring variant
+ * Gets the scoring of a board, based on stone scoring variant
  *
- * @param Board {Board object} The Board to add neighbour 
- * @param neighbour {Board object} The neighbour to add to the board
+ * @param board {2D int array} The board to be scored
+ * 
+ * @returns {object} Object containing player 1 and player 2 score
  *
  */
 	function stoneScoring(board){
 		
+		//Object to store player 1 and player 2 score
 		var score = {player1: 0, player2: 0};
 	
-		
 		for(var i=0;i<board.length;i++){
 			for(var j=0;j<board.length;j++){
 				if(board[i][j]==1){
@@ -452,11 +461,19 @@ function checkDeath(position, board){
 	
 	}
 	
-	
+/**
+ * Gets the scoring of a board, based on area scoring variant
+ *
+ * @param board {2D int array} The board to be scored 
+ *
+ * @returns {object} object containing player 1 and player 2 score
+ *
+ */	
 	function areaScoring(board){
 		var B = getNeighbours(board);
 		var score = {player1: 0, player2: 0};
 		
+		//Check the whole board on each position not visited
 		for (var i =0; i <board.length; i++){
 			for(var j=0; j < board.length; j++){
 				if (B[i][j].token == 0 && B[i][j].visited == false){
@@ -467,15 +484,14 @@ function checkDeath(position, board){
 		return score;
 	}
 	
-	function territoryScoring(board){
-		var score = areaScoring(board);
-		//score.player1 -= player1.killedTokes;
-		//score.player2 -= player2.killedTokens;
-		////console.log(score);
-		return score;  
-		
-	}
-	
+
+/**
+ * Checks if two 2D arrays a and b are identical
+ *
+ * @param a {2D int array} The first 2d array to be checked 
+ * @param b {2D int array} The second 2d array to be checked
+ *
+ */	
 	function arraysIdentical(a, b){
 	    
 	    for(var i = 0; i < a.length; i++){
@@ -490,6 +506,7 @@ function checkDeath(position, board){
 	}
 
 
+//Eports every function to be used by server.js 
 module.exports = 
 {
 	arraysIdentical : arraysIdentical,
@@ -499,7 +516,6 @@ module.exports =
 	FloodFillBFSArea:FloodFillBFSArea,
 	stoneScoring : stoneScoring,
 	areaScoring : areaScoring,
-	territoryScoring : territoryScoring,
 	checkDeath : checkDeath,
 	validate : validate
 }
