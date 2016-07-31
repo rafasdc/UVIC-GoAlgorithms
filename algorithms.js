@@ -256,7 +256,15 @@ function FloodFillBFSForDeath(Board,positions){
 	    }
 	}
 	
-	
+/**
+ * Check if a token placed at a positions is a suicidal move
+ *
+ * @param board {2D int array} The current board 
+ * @param position {object} position of token being placed
+ * @param numArmiesKilled {int} number of armies killed, if any
+ *
+ * @returns {boolean} true if its a suicide, false if its not
+ */	
 	function isSuicide(board, position,numArmiesKilled){
 		console.log("num armies killed are " + numArmiesKilled);
 		var A = getNeighbours(board);
@@ -264,17 +272,18 @@ function FloodFillBFSForDeath(Board,positions){
 		var C = getNeighbours(board);
 		var D = getNeighbours(board);
 		var positions = [];
+		//If the position has any liberties then it is not a suicide
 		if (A[position.row][position.column].liberties > 0){
 			return false;
 		}
 		
+		//If the positions has no liberties, it has not killed anything and it has no neighbours (tokens of same color) its a suicide
 		if (A[position.row][position.column].liberties == 0  && numArmiesKilled == 0 && A[position.row][position.column].neighbour.length == 0){
 			return true;	
 		} else  if (A[position.row][position.column].neighbour.length > 0){
-			
-			
-			
-		    //trying to commit suicide
+		    //May be trying to commit suicide but has neighbours, so the army can have liberties
+		    //The 4 ifs will check every adjacent token of the samel color, do a FloodFill and try to find liberties on one of them
+		    //if it does then the move is not suicidal, else it is
 				if (position.column+1 < A.length){
 				    if (A[position.row][position.column+1].token == A[position.row][position.column].token){
 				    	if(A[position.row][position.column+1].liberties > 0){
@@ -314,8 +323,8 @@ function FloodFillBFSForDeath(Board,positions){
 				}
 
 		} else {
-		console.log("suicidal move");
-		 return true;
+			//a Suicidal move, return true
+		 	return true;
 		}
 	}
 	
@@ -324,21 +333,31 @@ function FloodFillBFSForDeath(Board,positions){
 			//KO 
 			return  true;
 		} else {
+			//not KO
 			return false;
 		}
 	}
 	
-	
+/**
+ * Checks if a token placed in a position will kill any armies
+ *
+ * @param positon {object} Position of token being placed 
+ * @param board {2D int array} The current board
+ *
+ * @returns {object array} Array containing row and column positions of killed tokens
+ */	
 function checkDeath(position, board){
 	
+	//Function to create a positionKilled object
 	function positionKilled (row,column){
 		this.row = row,
 		this.column = column
 	}
 
 	var positions = [];
-	//console.log("checking if token " + board[position.row][position.column].token + " placed at row: " + position.row + " column: " + position.column + " killed something in board");
+	//console.log("checking if token " + board[position.row][position.column].token + " placed at row: " + position.row + " column: " + position.column + " killed something in board"); //debugging purposes
 	
+	//Will do a Flood fill on every adjacent token to check if it exhausted all of its liberties, if it did the positions of dead are added to the array
     if (position.column+1 < board.length){
     	var A = getNeighbours(board);
 	    if (A[position.row][position.column].token != A[position.row][position.column+1].token && A[position.row][position.column+1].token != 0){
@@ -379,43 +398,40 @@ function checkDeath(position, board){
 			}
 		}
 	}
-	////console.log("Killed armies");
-	 ////console.log("Right before checkDeath returns");
-	 ////console.log(new Date().getTime()/1000);
-	 ////console.log("Positions in check death is : ")
-	 ////console.log(positions);
+
 	return positions;
     
 }
-	
+
+/**
+ * Validadtes a Move (Check death should be called before this)
+ *
+ * @param board {2D int array} The current board 
+ * @param previousBoard {2D int array} The previous board
+ * @param position {object} Position of token trying to be placed
+ * @param numArmiesKilled {int} Number of armies killed 
+ *
+ * @returns {int} 2 for suicide, 1 for KO 0 for valid
+ */	
 	function validate(board, previousBoard, position,numArmiesKilled){ //add previous board here to check against ko for previous state
 	    
-	    //////console.log(board[position.row][position.column]);
-	    //var A = getNeighbours(board);
-		////console.log("ALGORITHMS LINE 373");
 	    if (isSuicide(board, position,numArmiesKilled)){
-	    	////console.log("ALGORITHMS LINE 375");
-	    	return 1;
+	    	return 1; //move is a suicide
 	    } else if(isKO(board, previousBoard)) {
-	    	return 2;  
+	    	return 2; //move will produce KO 
 	    } else {
 	    	return 0; //move is valid
 	    }
 	    
 	}
 	
-	function getScore(board){
-		//if stoneScoring
-		stoneScoring(board);
-		
-		//if armyscoring
-		areaScoring(board);//undisputed liberties no substraction
-		
-		//if territory scoring
-		territoryScoring();//undisputed liberties - death armies 
-	    
-	}
-	
+/**
+ * Gets the result of a board, based on stone scoring variant
+ *
+ * @param Board {Board object} The Board to add neighbour 
+ * @param neighbour {Board object} The neighbour to add to the board
+ *
+ */
 	function stoneScoring(board){
 		
 		var score = {player1: 0, player2: 0};
@@ -431,7 +447,7 @@ function checkDeath(position, board){
 				}
 			}
 		}
-		//console.log(score);
+		
 		return score; 
 	
 	}
@@ -440,7 +456,6 @@ function checkDeath(position, board){
 	function areaScoring(board){
 		var B = getNeighbours(board);
 		var score = {player1: 0, player2: 0};
-		//////console.log(A);
 		
 		for (var i =0; i <board.length; i++){
 			for(var j=0; j < board.length; j++){
@@ -449,7 +464,6 @@ function checkDeath(position, board){
 				}
 			}
 		}
-		////console.log("Player 1 score is " + score.player1 + " Player 2 score is " + score.player2);
 		return score;
 	}
 	
